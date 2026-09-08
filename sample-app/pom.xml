@@ -55,4 +55,10 @@
 
     </plugins>
  </build>
+ <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>http://YOUR-NEXUS-IP:8081/repository/maven-releases/</url>
+        </repository>
+ </distributionManagement>
 </project>         
