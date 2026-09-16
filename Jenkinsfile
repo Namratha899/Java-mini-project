@@ -42,7 +42,7 @@ pipeline {
 
                     echo "Deploying Application Version: ${APP_VERSION}"
 
-                    sh "scp target/sample-1.0.0.war ec2-user@3.91.0.47:/opt/tomcat/webapps/"
+                    sh "scp /var/jenkins_home/workspace/version1/sample-app/target/sample.war ec2-user@3.91.0.47:/opt/tomcat/webapps/"
                 }
             }
         }
