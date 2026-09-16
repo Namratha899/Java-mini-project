@@ -15,17 +15,17 @@ pipeline {
             }
         }
 
-    stage('Checkout') {
-     steps {
-        checkout([
-            $class: 'GitSCM',
-            branches: [[name: "refs/tags/${APP_VERSION}"]],
-            userRemoteConfigs: [[
-                url: 'https://github.com/Namratha899/Java-mini-project.git'
-            ]]
-        ])
-    }
-}
+    stage('Checkout Version') {
+            steps {
+                sh """
+                    git fetch --tags --force
+                    git checkout ${APP_VERSION}
+                """
+
+                echo "Checked out application version: ${APP_VERSION}"
+            }
+        }
+
 
 
         stage('Build') {
