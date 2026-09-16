@@ -25,24 +25,6 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                dir('sample-app') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar'
-                    }
-                }
-            }
-        }
-
-        stage('Approval') {
-            steps {
-                input(
-                    message: "Do you want to deploy ${APP_VERSION}?",
-                    ok: "Yes, Proceed"
-                )
-            }
-        }
 
         stage('Build') {
             steps {
@@ -58,7 +40,7 @@ pipeline {
 
                     echo "Deploying Application Version: ${APP_VERSION}"
 
-                    sh "scp target/sample-1.0.0.war user@server:/path/"
+                    sh "scp target/sample-1.0.0.war ec2-user@3.91.0.47:/opt/tomcat/webapps/"
                 }
             }
         }
