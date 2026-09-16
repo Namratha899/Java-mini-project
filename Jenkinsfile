@@ -15,14 +15,17 @@ pipeline {
             }
         }
 
-        stage('Checkout') {
-            steps {
-                git(
-                    branch: "${APP_VERSION}",
-                    url: 'https://github.com/Namratha899/Java-mini-project.git'
-                )
-            }
-        }
+    stage('Checkout') {
+     steps {
+        checkout([
+            $class: 'GitSCM',
+            branches: [[name: "refs/tags/${APP_VERSION}"]],
+            userRemoteConfigs: [[
+                url: 'https://github.com/Namratha899/Java-mini-project.git'
+            ]]
+        ])
+    }
+}
 
 
         stage('Build') {
