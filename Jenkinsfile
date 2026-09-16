@@ -1,67 +1,78 @@
+```groovy
 pipeline {
+
     agent any
 
-    tools {
-        jdk 'jdk17'
-        maven 'maven3'
-    }
-
     stages {
-        stage('Checkout Code') {
+
+        stage('Determine Version') {
             steps {
-                git branch: 'jmp3',
-                    url: 'https://github.com/Suprith25/Jenkins-mini-project.git'
+                script {
+                    env.APP_VERSION = "v${BUILD_NUMBER}"
+
+                    echo "Jenkins Build Number: ${BUILD_NUMBER}"
+                    echo "Application Version: ${APP_VERSION}"
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git(
+                    branch: "${APP_VERSION}",
+                    url: 'https://github.com/Namratha899/Java-mini-project.git'
+                )
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('sample-app') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage('Approval') {
+            steps {
+                input(
+                    message: "Do you want to deploy ${APP_VERSION}?",
+                    ok: "Yes, Proceed"
+                )
             }
         }
 
         stage('Build') {
             steps {
                 dir('sample-app') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package'
                 }
             }
         }
 
-        stage('Upload to JFrog') {
+        stage('Deploy') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'jfrog-creds',
-                                                 usernameVariable: 'JFROG_USER',
-                                                 passwordVariable: 'JFROG_PASS')]) {
-                    sh '''
-                        echo "Uploading WAR to JFrog..."
-                        WAR_FILE=$(ls sample-app/target/*.war)
-                        curl -u $JFROG_USER:$JFROG_PASS -T $WAR_FILE \
-                        "https://trial9krpxa.jfrog.io/artifactory/testrepo-generic-local/${JOB_NAME}-${BUILD_NUMBER}-sample.war"
-                    '''
-                }
-            }
-        }
+                dir('sample-app') {
 
-        stage('Deploy to Tomcat') {
-            steps {
-                sshagent (credentials: ['tomcat-ssh-key']) {
-                    sh '''
-                        echo "Deploying WAR to Tomcat server..."
+                    echo "Deploying Application Version: ${APP_VERSION}"
 
-                        WAR_FILE=$(ls sample-app/target/*.war)
-                        SERVER_IP=172.31.7.137
-                        SERVER_USER=ubuntu
-                        TOMCAT_DIR=/opt/tomcat/webapps
-
-                        # Copy WAR file to /tmp first (where ubuntu has access)
-                        scp -o StrictHostKeyChecking=no $WAR_FILE $SERVER_USER@$SERVER_IP:/tmp/
-
-                        # Move WAR into Tomcat webapps with sudo
-                        ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "sudo mv /tmp/$(basename $WAR_FILE) $TOMCAT_DIR/"
-
-                        # Restart Tomcat service
-                        ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "sudo systemctl restart tomcat"
-
-                        echo "Deployment completed successfully!"
-                    '''
+                    sh "scp target/sample-1.0.0.war user@server:/path/"
                 }
             }
         }
     }
-}
 
+    post {
+
+        success {
+            echo "Successfully deployed ${APP_VERSION}"
+        }
+
+        failure {
+            echo "Pipeline failed for ${APP_VERSION}"
+        }
+    }
+}
+```
